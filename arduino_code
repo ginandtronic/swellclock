@@ -1,0 +1,227 @@
+
+#include <Servo.h>
+#include <Bridge.h>
+#include <HttpClient.h>
+float height, pressure = 0;
+String webData;
+int charNumber = 0;
+int combinedindex, heightindex, periodindex = 0;
+float hservo, pservo ;
+
+Servo myservo1;
+Servo myservo2;
+void setup() {
+  // Bridge takes about two seconds to start up
+  // it can be helpful to use the on-board LED
+  // as an indicator for when it has initialized
+  myservo1.attach(9);
+  myservo2.attach(8);
+  myservo1.write(0);
+  myservo2.write(0);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
+  Bridge.begin();
+  digitalWrite(13, HIGH);
+
+  Serial.begin(9600);
+
+  while (!Serial); // wait for a serial connection
+}
+
+void loop() {
+  // Initialize the client library
+  HttpClient client;
+
+  // Make a HTTP request:
+  client.get("http://magicseaweed.com/api/6324520cb90816fa8eef8ff17dc6a44f/forecast/?spot_id=1");
+  //http://magicseaweed.com/api/6324520cb90816fa8eef8ff17dc6a44f/forecast/?spot_id=1
+  // if there are incoming bytes available
+  // from the server, read them and print them:
+  while (client.available()) {
+    char c = client.read();
+    charNumber++;   //count the number of characters
+
+    if (charNumber > 200)  //lets save some space
+    //300 put 300 for primary data  
+    {
+      webData = webData + c;
+    }
+    if (charNumber > 400)//lets save some space
+    //500 put 300 for primary data
+    {
+
+      Serial.println(webData);
+      combinedindex = webData.indexOf("combined");  //search for word "combined". this part is not need because we are reading latest data from the web site
+      if (combinedindex > 0)
+      {
+        //Serial.println(combinedindex);
+      }
+
+      heightindex = webData.indexOf("height"); //search for word "height"
+      if (heightindex > 0)
+      {
+        Serial.print("Height : ");
+        //  Serial.println(webData[heightindex+8]);
+        hservo = getfloat('h', heightindex);  //get the float value of height
+        turnhservo(hservo);   //turn the servo according to height value
+        Serial.println(hservo);
+      }
+      periodindex = webData.indexOf("period");
+      {
+        Serial.print("Period : ");
+        //Serial.println(periodindex);
+        pservo = getfloat('p', periodindex);
+        turnpservo(pservo);
+        Serial.println(pservo);
+        webData = "";    //set the webData string to null
+        charNumber = 0;  //reset the number of characters counted
+        break;      // stop the while loop
+      }
+
+
+    }
+
+  }
+  Serial.flush();
+
+  delay(5000);
+}
+
+float getfloat(char d, int startindex)   // first argument consider if the input is for height or for period
+{                                        //second argument is for starting index of height oor period in webData string
+  static int start = 0;
+  String val;
+  if ( d == 'h')
+  {
+    start =  startindex + 8;           // digits start 8 chars after the start of "height" word
+    for (int i = 0; i < 4; i++)        //check chracters for 4 times, until it meets ","
+    {
+      if (webData[start + i] == ',')  //if it meet "," before 4 th character, break the for loop and stop the loop
+      {
+        return val.toFloat();     //return the extracted value in float
+        break;
+      }
+      else
+      {
+        val = val + webData[start + i];   //combine characters and build a new string
+      }
+    }
+  }
+
+  else if ( d == 'p')
+  {
+    start =  startindex + 8;
+    for (int i = 0; i < 4; i++)
+    {
+      if (webData[start + i] == ',')
+      {
+        return val.toFloat();
+        break;
+      }
+      else
+      {
+        val = val + webData[start + i];
+      }
+    }
+  }
+
+}
+
+
+void turnhservo(float hservo)   //this is for turn the servo
+{
+  if (hservo > 0.0 && hservo < 1.0 )
+  {
+    myservo1.write(20);
+    Serial.println("Servo angle : 20");
+  }
+  else if (hservo > 1.1 && hservo < 3.0 )
+  {
+    myservo1.write(40);
+     Serial.println("Servo angle : 40");
+  }
+  if (hservo > 3.1 && hservo < 5.0 )
+  {
+    myservo1.write(60);
+    Serial.println("Servo angle : 60");
+  }
+  
+  else if (hservo > 5.1 && hservo < 7.0 )
+  {
+    myservo1.write(80);
+    Serial.println("Servo angle : 80");
+  }
+  if (hservo > 7.1 && hservo < 9.0 )
+  {
+    myservo1.write(100);
+    Serial.println("Servo angle : 100");
+  }
+    
+  else if (hservo > 9.1 && hservo < 11.0 )
+  {
+    myservo1.write(120);
+    Serial.println("Servo angle : 120");
+  }  
+  if (hservo > 11.1 && hservo < 13.0 )
+  {
+    myservo1.write(140);
+    Serial.println("Servo angle : 140");
+  }
+    
+  else if (hservo > 13.1 && hservo < 15.0 )
+  {
+    myservo1.write(160);
+    Serial.println("Servo angle : 160");
+  }
+  if (hservo > 15.1 && hservo < 17.0 )
+  {
+    myservo1.write(180);
+    Serial.println("Servo angle : 180");
+  }
+}
+
+
+void turnpservo(float pservo)
+{
+  if (pservo > 0.0 && pservo < 1.0 )
+    myservo2.write(20);
+  else if (pservo > 1.1 && pservo < 4.0 )
+    myservo2.write(40);
+  if (pservo > 4.1 && pservo < 6.0 )
+  {
+    myservo2.write(60);
+    Serial.println("Servo angle : 60");
+  }
+  else if (pservo > 6.1 && pservo < 8.0 )
+    {
+      myservo2.write(80);
+      Serial.println("Servo angle : 80");
+    }
+   
+  if (pservo > 8.1 && pservo < 10.0 )
+    {
+    myservo2.write(100);
+    Serial.println("Servo angle : 100");
+    }
+  else if (pservo > 10.1 && pservo < 12.0 )
+  {
+    myservo2.write(120);
+    Serial.println("Servo angle : 120");
+  }
+  if (pservo > 12.1 && pservo < 13.0 )
+ {
+    myservo2.write(140);
+    Serial.println("Servo angle : 140");
+ } 
+  else if (pservo > 13.1 && pservo < 15.0 )
+  {
+    myservo2.write(160);
+    Serial.println("Servo angle : 160");
+  }
+  if (pservo > 15.1 && pservo < 25.0 )
+  {
+    myservo2.write(180);
+    Serial.println("Servo angle : 180");
+  }
+}
+
